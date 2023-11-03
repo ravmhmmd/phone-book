@@ -49,7 +49,9 @@ export default function ContactList() {
 	const toggleFavorite = (contactId: string) => {
 		if (favoriteContacts.includes(contactId)) {
 			// Remove from favorites
-			setFavoriteContacts(favoriteContacts.filter((id) => id !== contactId));
+			setFavoriteContacts(
+				favoriteContacts.filter((id: string) => id !== contactId)
+			);
 		} else {
 			// Add to favorites
 			setFavoriteContacts([...favoriteContacts, contactId]);
