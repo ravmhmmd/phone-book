@@ -1,50 +1,80 @@
-"use client";
 import ContactCard from "@/components/ContactCard";
 import { css } from "@emotion/css";
 import { useQuery, gql } from "@apollo/client";
 import { useEffect, useState } from "react";
 
-const GET_PHONES = gql`
-	query GetPhoneList(
-		$where: phone_bool_exp
-		$distinct_on: [phone_select_column!]
-		$limit: Int = 10
-		$offset: Int = 0
-		$order_by: [phone_order_by!]
-	) {
-		phone(
-			where: $where
-			distinct_on: $distinct_on
-			limit: $limit
-			offset: $offset
-			order_by: $order_by
-		) {
-			contact {
-				last_name
-				first_name
-				id
+const GET_FAVORITE_CONTACTS = gql`
+	query GetFavoriteContacts($where: contact_bool_exp) {
+		contact(where: $where) {
+			created_at
+			first_name
+			id
+			last_name
+			phones {
+				number
 			}
-			number
 		}
 	}
 `;
 
+const GET_REGULAR_CONTACTS = gql`
+	query GetRegularContacts(
+		$limit: Int
+		$offset: Int
+		$where: contact_bool_exp
+	) {
+		contact(limit: $limit, offset: $offset, where: $where) {
+			created_at
+			first_name
+			id
+			last_name
+			phones {
+				number
+			}
+		}
+	}
+`;
+
+const PAGE_SIZE = 10;
+
 export default function ContactList() {
-	const { data, loading, error } = useQuery(GET_PHONES);
-
-	if (loading) {
-		console.log(loading);
-	}
-
-	if (error) {
-		console.error(error);
-	}
-
-	const phones = data?.phone;
 	const [favoriteContacts, setFavoriteContacts] = useState(() => {
 		const storedFavorites = localStorage.getItem("favoriteContacts");
 		return storedFavorites ? JSON.parse(storedFavorites) : [];
 	});
+
+	const [page, setPage] = useState(1);
+
+	const { data: favoriteData, loading: favoriteLoading } = useQuery(
+		GET_FAVORITE_CONTACTS,
+		{
+			variables: {
+				where: {
+					id: { _in: favoriteContacts },
+				},
+			},
+		}
+	);
+
+	const { data: regularData, loading: regularLoading } = useQuery(
+		GET_REGULAR_CONTACTS,
+		{
+			variables: {
+				limit: PAGE_SIZE,
+				offset: (page - 1) * PAGE_SIZE,
+				where: {
+					id: { _nin: favoriteContacts },
+				},
+			},
+		}
+	);
+
+	if (favoriteLoading || regularLoading) {
+		console.log(favoriteLoading || regularLoading);
+	}
+
+	const favoriteContactsData = favoriteData?.contact || [];
+	const regularContactsData = regularData?.contact || [];
 
 	const toggleFavorite = (contactId: string) => {
 		if (favoriteContacts.includes(contactId)) {
@@ -56,6 +86,8 @@ export default function ContactList() {
 			// Add to favorites
 			setFavoriteContacts([...favoriteContacts, contactId]);
 		}
+		// When the favorite status changes, reset the page to the first page
+		setPage(1);
 	};
 
 	useEffect(() => {
@@ -69,17 +101,132 @@ export default function ContactList() {
 				display: flex;
 				flex-direction: column;
 				gap: 8px;
+				justify-content: center;
 			`}
 		>
-			{phones?.map((i: any) => (
+			<div
+				className={css`
+					color: var(--Dark-Grey, #2d2d2d);
+					font-family: Poppins;
+					font-size: 18px;
+					font-style: bold;
+					font-weight: 700;
+					line-height: normal;
+					@media (min-width: 576px) {
+						font-size: 24px;
+					}
+					margin-top: 12px;
+				`}
+			>
+				Favorites
+			</div>
+			{favoriteContactsData.map((contact: any) => (
 				<ContactCard
-					key={i.contact.id}
-					contactName={i.contact.first_name + " " + i.contact.last_name}
-					contactNumber={i.number}
-					isFavourite={favoriteContacts.includes(i.contact.id)}
-					toggleFavorite={() => toggleFavorite(i.contact.id)}
+					key={contact.id}
+					contactName={`${contact.first_name} ${contact.last_name}`}
+					contactNumber={contact.phones[0].number}
+					isFavourite={true}
+					toggleFavorite={() => toggleFavorite(contact.id)}
 				/>
 			))}
+			<div
+				className={css`
+					color: var(--Dark-Grey, #2d2d2d);
+					font-family: Poppins;
+					font-size: 18px;
+					font-style: bold;
+					font-weight: 700;
+					line-height: normal;
+					@media (min-width: 576px) {
+						font-size: 24px;
+					}
+					margin-top: 24px;
+				`}
+			>
+				All Contact
+			</div>
+			{regularContactsData.map((contact: any) => (
+				<ContactCard
+					key={contact.id}
+					contactName={`${contact.first_name} ${contact.last_name}`}
+					contactNumber={contact.phones[0].number}
+					isFavourite={favoriteContacts.includes(contact.id)}
+					toggleFavorite={() => toggleFavorite(contact.id)}
+				/>
+			))}
+
+			{/* pagination nav */}
+			<div
+				className={css`
+					display: flex;
+					justify-content: center;
+					align-items: center;
+					margin-top: 24px;
+					font-family: Poppins;
+					margin: auto;
+				`}
+			>
+				<button
+					onClick={() => setPage(page - 1)}
+					disabled={page === 1}
+					className={css`
+						margin: 8px;
+						background-color: ${page === 1 ? "#ccc" : "#f4ce14"};
+						color: ${page === 1 ? "#888" : "var(--Dark-Grey, #2d2d2d)"};
+						border-radius: 12px;
+						cursor: ${page === 1 ? "not-allowed" : "pointer"};
+						font-size: 14px;
+						padding: 12px 16px;
+						@media (min-width: 576px) {
+							padding: 12px 24px;
+						}
+						font-family: Poppins;
+					`}
+				>
+					&lt;
+				</button>
+				<div
+					className={css`
+						margin: 8px;
+						background-color: var(--Dark-Grey, #2d2d2d);
+						color: #f4ce14;
+						border-radius: 12px;
+						padding: 12px 16px;
+						@media (min-width: 576px) {
+							padding: 12px 24px;
+						}
+						font-size: 14px;
+						text-align: center;
+					`}
+				>
+					{page}
+				</div>
+				<button
+					onClick={() => setPage(page + 1)}
+					disabled={regularContactsData.length < PAGE_SIZE}
+					className={css`
+						margin: 8px;
+						background-color: ${regularContactsData.length < PAGE_SIZE
+							? "#ccc"
+							: "#f4ce14"};
+						color: ${regularContactsData.length < PAGE_SIZE
+							? "#888"
+							: "var(--Dark-Grey, #2d2d2d)"};
+						border-radius: 12px;
+						cursor: ${regularContactsData.length < PAGE_SIZE
+							? "not-allowed"
+							: "pointer"};
+						font-size: 14px;
+						padding: 12px 16px;
+						@media (min-width: 576px) {
+							padding: 12px 24px;
+						}
+						font-family: Poppins;
+					`}
+				>
+					&gt;
+				</button>
+			</div>
 		</div>
 	);
 }
