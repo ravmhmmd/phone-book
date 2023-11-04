@@ -39,9 +39,13 @@ const PAGE_SIZE = 10;
 
 interface ContactListProps {
 	clickCardHandler: (id: number) => void;
+	searchValue: string;
 }
 
-export default function ContactList({ clickCardHandler }: ContactListProps) {
+export default function ContactList({
+	clickCardHandler,
+	searchValue,
+}: ContactListProps) {
 	const [favoriteContacts, setFavoriteContacts] = useState(() => {
 		const storedFavorites = localStorage.getItem("favoriteContacts");
 		return storedFavorites ? JSON.parse(storedFavorites) : [];
@@ -68,6 +72,7 @@ export default function ContactList({ clickCardHandler }: ContactListProps) {
 				offset: (page - 1) * PAGE_SIZE,
 				where: {
 					id: { _nin: favoriteContacts },
+					first_name: { _ilike: `%${searchValue}%` }, // Add this filter
 				},
 			},
 		}

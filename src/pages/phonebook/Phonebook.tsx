@@ -31,6 +31,7 @@ export default function Phonebook() {
 	const [contactDetailModalActive, setContactDetailModalActive] =
 		useState(false);
 	const [cardActiveId, setCardActiveId] = useState(0);
+	const [searchValue, setSearchValue] = useState("");
 
 	return (
 		<div
@@ -187,9 +188,14 @@ export default function Phonebook() {
 						line-height: normal;
 						box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.25);
 					`}
+					value={searchValue}
+					onChange={(e) => setSearchValue(e.target.value)}
 				/>
 				<ClientOnly>
-					<ContactList clickCardHandler={clickCardHandler} />
+					<ContactList
+						clickCardHandler={clickCardHandler}
+						searchValue={searchValue}
+					/>
 				</ClientOnly>
 			</div>
 			{/* footer */}
