@@ -2,10 +2,22 @@
 import { css } from "@emotion/css";
 import ContactList from "@/components/ContactList";
 import ClientOnly from "@/components/ClientOnly";
+import { useState } from "react";
+import AddContactModal from "@/components/modal/AddContactModal";
 
 // const breakpoints = [576, 768, 992, 1200];
 
 export default function Phonebook() {
+	const addBtnHandler = () => {
+		setAddModalActive(true);
+	};
+
+	const closeModalHandler = () => {
+		setAddModalActive(false);
+	};
+
+	const [addModalActive, setAddModalActive] = useState(false);
+
 	return (
 		<div
 			className={css`
@@ -13,8 +25,26 @@ export default function Phonebook() {
 				display: flex
 				justify-content: center;
 				background: var(--White, #f5f7f8);
+				position: relative
 			`}
 		>
+			{addModalActive && (
+				<div
+					className={css`
+						width: 100%;
+						height: 100vh;
+						top: 0;
+						position: fixed;
+						z-index: 20;
+						background-color: rgba(45, 45, 45, 0.5);
+						display: flex;
+						justify-content: center;
+						align-items: center;
+					`}
+				>
+					<AddContactModal closeModalHandler={closeModalHandler} />
+				</div>
+			)}
 			{/* header */}
 			<div
 				className={css`
@@ -25,6 +55,7 @@ export default function Phonebook() {
 					width: 100%;
 					padding: 16px 24px;
 					position: fixed;
+					z-index: 10;
 					top: 0;
 					box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.25);
 					@media (min-width: 576px) {
@@ -68,6 +99,7 @@ export default function Phonebook() {
 							display: block;
 						}
 					`}
+					onClick={addBtnHandler}
 				>
 					+ Add People
 				</div>
@@ -86,6 +118,7 @@ export default function Phonebook() {
 							display: none;
 						}
 					`}
+					onClick={addBtnHandler}
 				>
 					+
 				</div>
