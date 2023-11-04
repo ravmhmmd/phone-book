@@ -134,7 +134,7 @@ export default function AddContactModal({
 					`}
 				>
 					<input
-						type="text"
+						type="number"
 						placeholder="Insert phone number"
 						value={number}
 						onChange={(e) => handlePhoneNumberChange(index, e.target.value)}
@@ -229,7 +229,7 @@ export default function AddContactModal({
 		<div
 			className={css`
 				background: var(--Dark-Grey, #2d2d2d);
-				padding: 36px 12px 98px 12px;
+				padding: 36px 24px 98px 24px;
 				color: #000;
 				box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.25);
 				font-family: Poppins;
