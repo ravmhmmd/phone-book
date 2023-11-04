@@ -1,6 +1,6 @@
 import { css } from "@emotion/css";
 import { useState } from "react";
-import { useMutation, gql } from "@apollo/client";
+import { useMutation, gql, useQuery } from "@apollo/client";
 import { MdDelete } from "react-icons/md";
 
 interface AddContactProps {
@@ -32,6 +32,20 @@ const ADD_CONTACT_WITH_PHONES = gql`
 	}
 `;
 
+const GET_CONTACT_SIMILAR = gql`
+	query GetContactList($where: contact_bool_exp) {
+		contact(where: $where) {
+			created_at
+			first_name
+			id
+			last_name
+			phones {
+				number
+			}
+		}
+	}
+`;
+
 export default function AddContactModal({
 	closeModalHandler,
 }: AddContactProps) {
@@ -39,10 +53,43 @@ export default function AddContactModal({
 	const [first_name, setFirstName] = useState("");
 	const [last_name, setLastName] = useState("");
 	const [phoneNumbers, setPhoneNumbers] = useState([""]);
+	const [errorMes, setErrorMes] = useState("");
+	const [errorTag, setErrorTag] = useState("");
+
+	const { data, loading, error } = useQuery(GET_CONTACT_SIMILAR, {
+		variables: {
+			where: {
+				first_name: { _eq: first_name },
+				last_name: { _eq: last_name },
+			},
+		},
+	});
+
+	const isNameValid = (data: any) => {
+		if (!first_name) {
+			return false;
+		}
+
+		if (!data || data.loading || data.error) {
+			return false;
+		}
+
+		const contacts = data.contact;
+		const isUnique = contacts.length === 0 ? true : false;
+
+		const firstNameHasSpecialCharacters = /[^a-zA-Z\s]/.test(first_name);
+		const lastNameHasSpecialCharacters = /[^a-zA-Z\s]/.test(last_name);
+		return (
+			isUnique &&
+			!firstNameHasSpecialCharacters &&
+			!lastNameHasSpecialCharacters
+		);
+	};
+
+	const isNameValidResult = !loading && !error && isNameValid(data);
 
 	const [addContactMutation] = useMutation(ADD_CONTACT_WITH_PHONES, {
 		update: (cache, { data }) => {
-			// Add the new contact to the cache
 			const newContact = data.insert_contact.returning[0];
 			cache.modify({
 				fields: {
@@ -61,6 +108,7 @@ export default function AddContactModal({
 			});
 		},
 	});
+
 	const renderPhoneInputFields = () => {
 		return phoneNumbers.map((number, index) => (
 			<div
@@ -150,7 +198,15 @@ export default function AddContactModal({
 		setPhoneNumbers(updatedPhoneNumbers);
 	};
 
-	const handleSave = () => {
+	const handleSave = async () => {
+		if (!isNameValidResult) {
+			setErrorMes(
+				"Invalid name format. Names must be fill, unique, and contain only letters."
+			);
+			setErrorTag("name");
+			return;
+		}
+
 		const variables = {
 			first_name,
 			last_name,
@@ -284,6 +340,15 @@ export default function AddContactModal({
 						`}
 					/>
 				</div>
+				{errorTag === "name" && errorMes && (
+					<div
+						className={css`
+							color: #d72626;
+						`}
+					>
+						{errorMes}
+					</div>
+				)}
 				<div
 					className={css`
 						display: flex;
@@ -321,6 +386,15 @@ export default function AddContactModal({
 					</div>
 					<div className={css``}>{renderPhoneInputFields()}</div>
 				</div>
+				{errorTag === "number" && errorMes && (
+					<div
+						className={css`
+							color: #d72626;
+						`}
+					>
+						{errorMes}
+					</div>
+				)}
 			</div>
 			<div
 				className={css`
