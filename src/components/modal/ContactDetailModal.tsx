@@ -200,6 +200,7 @@ export default function ContactDetailModal({
 					{contactData &&
 						contactData.phones.map((i: any, idx: any) => (
 							<div
+								key={idx}
 								className={css`
 									display: flex;
 									width: 100%;
