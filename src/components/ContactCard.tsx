@@ -3,18 +3,25 @@ import { css } from "@emotion/css";
 import { BsBookmark, BsFillBookmarkFill } from "react-icons/bs";
 
 interface ContactProps {
+	contactId: number;
 	contactName: string;
 	contactNumber: number;
 	isFavourite: boolean;
 	toggleFavorite: () => void;
+	clickCardHandler: (id: number) => void;
 }
 
 export default function ContactCard({
+	contactId,
 	contactName,
 	contactNumber,
 	isFavourite,
 	toggleFavorite,
+	clickCardHandler,
 }: ContactProps) {
+	const clickHandler = () => {
+		clickCardHandler(contactId);
+	};
 	return (
 		<div
 			className={css`
@@ -30,6 +37,7 @@ export default function ContactCard({
 					? "background: var(--Dark-Grey, #2d2d2d);"
 					: "border: 1px solid var(--Light-Grey, #9da1aa); background: #fff;"}
 			`}
+			onClick={clickHandler}
 		>
 			<div
 				className={css`

@@ -4,6 +4,7 @@ import ContactList from "@/components/ContactList";
 import ClientOnly from "@/components/ClientOnly";
 import { useState } from "react";
 import AddContactModal from "@/components/modal/AddContactModal";
+import ContactDetailModal from "@/components/modal/ContactDetailModal";
 
 // const breakpoints = [576, 768, 992, 1200];
 
@@ -12,11 +13,24 @@ export default function Phonebook() {
 		setAddModalActive(true);
 	};
 
-	const closeModalHandler = () => {
+	const closeAddContactModalHandler = () => {
 		setAddModalActive(false);
 	};
 
+	const clickCardHandler = (id: number) => {
+		setContactDetailModalActive(true);
+		setCardActiveId(id);
+	};
+
+	const closeCardHandler = () => {
+		setContactDetailModalActive(false);
+		setCardActiveId(0);
+	};
+
 	const [addModalActive, setAddModalActive] = useState(false);
+	const [contactDetailModalActive, setContactDetailModalActive] =
+		useState(false);
+	const [cardActiveId, setCardActiveId] = useState(0);
 
 	return (
 		<div
@@ -42,7 +56,27 @@ export default function Phonebook() {
 						align-items: center;
 					`}
 				>
-					<AddContactModal closeModalHandler={closeModalHandler} />
+					<AddContactModal closeModalHandler={closeAddContactModalHandler} />
+				</div>
+			)}
+			{contactDetailModalActive && (
+				<div
+					className={css`
+						width: 100%;
+						height: 100vh;
+						top: 0;
+						position: fixed;
+						z-index: 20;
+						background-color: rgba(45, 45, 45, 0.5);
+						display: flex;
+						justify-content: center;
+						align-items: center;
+					`}
+				>
+					<ContactDetailModal
+						closeBtnHandler={closeCardHandler}
+						contactId={cardActiveId}
+					/>
 				</div>
 			)}
 			{/* header */}
@@ -155,7 +189,7 @@ export default function Phonebook() {
 					`}
 				/>
 				<ClientOnly>
-					<ContactList />
+					<ContactList clickCardHandler={clickCardHandler} />
 				</ClientOnly>
 			</div>
 			{/* footer */}

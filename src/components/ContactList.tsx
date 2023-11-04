@@ -37,7 +37,11 @@ const GET_REGULAR_CONTACTS = gql`
 
 const PAGE_SIZE = 10;
 
-export default function ContactList() {
+interface ContactListProps {
+	clickCardHandler: (id: number) => void;
+}
+
+export default function ContactList({ clickCardHandler }: ContactListProps) {
 	const [favoriteContacts, setFavoriteContacts] = useState(() => {
 		const storedFavorites = localStorage.getItem("favoriteContacts");
 		return storedFavorites ? JSON.parse(storedFavorites) : [];
@@ -123,10 +127,12 @@ export default function ContactList() {
 			{favoriteContactsData.map((contact: any) => (
 				<ContactCard
 					key={contact.id}
+					contactId={contact.id}
 					contactName={`${contact.first_name} ${contact.last_name}`}
 					contactNumber={contact.phones[0].number}
 					isFavourite={true}
 					toggleFavorite={() => toggleFavorite(contact.id)}
+					clickCardHandler={clickCardHandler}
 				/>
 			))}
 			<div
@@ -148,10 +154,12 @@ export default function ContactList() {
 			{regularContactsData.map((contact: any) => (
 				<ContactCard
 					key={contact.id}
+					contactId={contact.id}
 					contactName={`${contact.first_name} ${contact.last_name}`}
 					contactNumber={contact.phones[0].number}
 					isFavourite={favoriteContacts.includes(contact.id)}
 					toggleFavorite={() => toggleFavorite(contact.id)}
+					clickCardHandler={clickCardHandler}
 				/>
 			))}
 
