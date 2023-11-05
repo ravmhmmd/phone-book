@@ -87,20 +87,16 @@ export default function ContactList({
 
 	const toggleFavorite = (contactId: string) => {
 		if (favoriteContacts.includes(contactId)) {
-			// Remove from favorites
 			setFavoriteContacts(
 				favoriteContacts.filter((id: string) => id !== contactId)
 			);
 		} else {
-			// Add to favorites
 			setFavoriteContacts([...favoriteContacts, contactId]);
 		}
-		// When the favorite status changes, reset the page to the first page
 		setPage(1);
 	};
 
 	useEffect(() => {
-		// Save favorite contacts to Local Storage when the list changes
 		localStorage.setItem("favoriteContacts", JSON.stringify(favoriteContacts));
 	}, [favoriteContacts]);
 

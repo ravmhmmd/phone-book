@@ -169,6 +169,7 @@ export default function AddContactModal({
 								align-items: center;
 							`}
 							onClick={() => removePhoneField(index)}
+							data-testid={`delete-number-field-btn-${index}`}
 						>
 							<MdDelete />
 						</button>
@@ -250,6 +251,7 @@ export default function AddContactModal({
 			`}
 		>
 			<div
+				data-testid="add-contact-title"
 				className={css`
 					font-size: 20px;
 					font-style: bold;

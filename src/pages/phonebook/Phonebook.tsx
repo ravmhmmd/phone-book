@@ -35,6 +35,7 @@ export default function Phonebook() {
 
 	return (
 		<div
+			data-testid="phonebook"
 			className={css`
 				width: 100%;
 				display: flex
@@ -120,6 +121,7 @@ export default function Phonebook() {
 					YellowPage
 				</div>
 				<div
+					data-testid="add-contact-btn"
 					className={css`
 						color: var(--Dark-Grey, #2d2d2d);
 						text-align: right;

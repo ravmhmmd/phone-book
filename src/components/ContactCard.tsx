@@ -45,6 +45,7 @@ export default function ContactCard({
 					width: 100%;
 				`}
 				onClick={clickHandler}
+				data-testid="contact-card"
 			>
 				<div
 					className={css`
@@ -75,7 +76,8 @@ export default function ContactCard({
 					{contactNumber}
 				</div>
 			</div>
-			<div onClick={toggleFavorite}>
+
+			<div onClick={toggleFavorite} data-testid="bookmark-icon">
 				{isFavourite ? (
 					<BsFillBookmarkFill
 						className={css`
@@ -84,6 +86,7 @@ export default function ContactCard({
 							color: var(--Yellow, #f4ce14);
 							cursor: pointer;
 						`}
+						data-testid="favorite-icon"
 					/>
 				) : (
 					<BsBookmark
@@ -93,6 +96,7 @@ export default function ContactCard({
 							color: var(--Dark-Grey, #2d2d2d);
 							cursor: pointer;
 						`}
+						data-testid="regular-icon"
 					/>
 				)}
 			</div>
