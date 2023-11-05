@@ -32,18 +32,19 @@ export default function ContactCard({
 				align-items: center;
 				padding: 8px 36px;
 				margin: 4px 0;
-				cursor: pointer;
 				${isFavourite
 					? "background: var(--Dark-Grey, #2d2d2d);"
 					: "border: 1px solid var(--Light-Grey, #9da1aa); background: #fff;"}
 			`}
-			onClick={clickHandler}
 		>
 			<div
 				className={css`
 					display: flex;
 					flex-direction: column;
+					cursor: pointer;
+					width: 100%;
 				`}
+				onClick={clickHandler}
 			>
 				<div
 					className={css`
