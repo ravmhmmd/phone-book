@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom/extend-expect";
 import { MockedProvider } from "@apollo/client/testing";
-import ContactList from "../ContactList";
+import ContactList from "../src/components/ContactList";
 import { act } from "react-dom/test-utils";
 import { gql } from "@apollo/client";
 

@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
-import AddContactModal from "../AddContactModal";
+import AddContactModal from "../src/components/modal/AddContactModal";
 import { gql } from "@apollo/client";
 import { MockedProvider } from "@apollo/client/testing";
 import { act } from "react-dom/test-utils";

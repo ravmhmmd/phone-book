@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
-import ContactCard from "../ContactCard";
+import ContactCard from "../src/components/ContactCard";
 
 test("render favorite contact ContactCard", () => {
 	render(

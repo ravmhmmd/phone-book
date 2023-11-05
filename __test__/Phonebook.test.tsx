@@ -1,7 +1,7 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom/extend-expect";
-import Phonebook from "../Phonebook";
+import Phonebook from "../src/pages/phonebook/Phonebook";
 import { gql } from "@apollo/client";
 import { MockedProvider } from "@apollo/client/testing";
 
