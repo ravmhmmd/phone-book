@@ -1,6 +1,8 @@
 import { gql, useMutation, useQuery } from "@apollo/client";
 import { css } from "@emotion/css";
+import { useEffect, useState } from "react";
 import { AiOutlineClose } from "react-icons/ai";
+// import { MdDelete } from "react-icons/md";
 
 interface ContactDetailModalProps {
 	contactId: number;
@@ -27,6 +29,45 @@ const DELETE_CONTACT = gql`
 			first_name
 			last_name
 			id
+		}
+	}
+`;
+
+const EDIT_CONTACT = gql`
+	mutation EditContactById($id: Int!, $_set: contact_set_input) {
+		update_contact_by_pk(pk_columns: { id: $id }, _set: $_set) {
+			id
+			first_name
+			last_name
+			phones {
+				number
+			}
+		}
+	}
+`;
+
+const GET_CONTACT_SIMILAR = gql`
+	query GetContactList(
+		$distinct_on: [contact_select_column!]
+		$limit: Int
+		$offset: Int
+		$order_by: [contact_order_by!]
+		$where: contact_bool_exp
+	) {
+		contact(
+			distinct_on: $distinct_on
+			limit: $limit
+			offset: $offset
+			order_by: $order_by
+			where: $where
+		) {
+			created_at
+			first_name
+			id
+			last_name
+			phones {
+				number
+			}
 		}
 	}
 `;
@@ -58,6 +99,15 @@ export default function ContactDetailModal({
 		return formattedDate;
 	};
 
+	const [editMode, setEditMode] = useState(false);
+	const [firstName, setFirstName] = useState("");
+	const [lastName, setLastName] = useState("");
+	const [tempFirstName, setTempFirstName] = useState("");
+	const [tempLastName, setTempLastName] = useState("");
+	const [phoneNumbers, setPhoneNumbers] = useState([]);
+	const [createdAt, setCreatedAt] = useState("");
+	const [errorMes, setErrorMes] = useState("");
+
 	const { data, error, loading } = useQuery(GET_CONTACT_DETAILS, {
 		variables: {
 			id: contactId,
@@ -72,10 +122,19 @@ export default function ContactDetailModal({
 		console.log(loading);
 	}
 
-	let contactData: any;
-	if (data && data.contact_by_pk) {
-		contactData = data.contact_by_pk;
-	}
+	useEffect(() => {
+		if (data && data.contact_by_pk) {
+			const contactData = data.contact_by_pk;
+			setFirstName(contactData.first_name);
+			setLastName(contactData.last_name);
+			setPhoneNumbers(contactData.phones);
+			setCreatedAt(contactData.created_at);
+		}
+	}, [data]);
+
+	const [editContact] = useMutation(EDIT_CONTACT, {
+		update(cache, { data }) {},
+	});
 
 	const deleteBtnHandler = () => {
 		deleteContact({
@@ -89,6 +148,88 @@ export default function ContactDetailModal({
 			})
 			.catch((error) => {
 				console.error("Error deleting contact:", error);
+			});
+	};
+
+	const editBtnHandler = () => {
+		setEditMode(true);
+		console.log(firstName, lastName, phoneNumbers);
+		setTempFirstName(firstName);
+		setTempLastName(lastName);
+	};
+
+	const cancelEditBtnHandler = () => {
+		setFirstName(tempFirstName);
+		setLastName(tempLastName);
+		setTempFirstName("");
+		setTempLastName("");
+		setErrorMes("");
+		setEditMode(false);
+	};
+
+	const uniqueNameCheck = useQuery(GET_CONTACT_SIMILAR, {
+		variables: {
+			where: {
+				first_name: { _eq: firstName },
+				last_name: { _eq: lastName },
+			},
+		},
+	});
+
+	const isNameValid = (data: any) => {
+		if (!firstName) {
+			return false;
+		}
+
+		if (!data || data.loading || data.error) {
+			return false;
+		}
+
+		const contacts = data.contact;
+		const isUnique = contacts.length === 0 ? true : false;
+
+		const firstNameHasSpecialCharacters = /[^a-zA-Z\s]/.test(firstName);
+		const lastNameHasSpecialCharacters = /[^a-zA-Z\s]/.test(lastName);
+		return (
+			isUnique &&
+			!firstNameHasSpecialCharacters &&
+			!lastNameHasSpecialCharacters
+		);
+	};
+
+	const isNameValidResult =
+		!uniqueNameCheck.loading &&
+		!uniqueNameCheck.error &&
+		isNameValid(uniqueNameCheck.data);
+
+	const saveEditBtnHandler = async () => {
+		if (!isNameValidResult) {
+			setErrorMes(
+				"Invalid name format. Names must be fill, unique, and contain only letters."
+			);
+			return;
+		}
+
+		const updatedContact = {
+			first_name: firstName,
+			last_name: lastName,
+		};
+
+		editContact({
+			variables: {
+				id: contactId,
+				_set: updatedContact,
+			},
+		})
+			.then(() => {
+				console.log("Contact details updated successfully");
+				setTempFirstName("");
+				setTempLastName("");
+				setErrorMes("");
+				setEditMode(false);
+			})
+			.catch((error) => {
+				console.error("Error updating contact:", error);
 			});
 	};
 
@@ -151,35 +292,129 @@ export default function ContactDetailModal({
 						<AiOutlineClose />
 					</div>
 				</div>
-				<div
-					className={css`
-						display: flex;
-						flex-direction: column;
-						width: 100%;
-						gap: 4px;
-					`}
-				>
+				{/* data - editMode false */}
+				{!editMode && (
 					<div
 						className={css`
-							color: #f4ce14;
-							font-size: 18px;
-							font-weight: 600;
+							display: flex;
+							flex-direction: column;
+							width: 100%;
+							gap: 4px;
 						`}
 					>
-						Name
-					</div>
-					{contactData && (
 						<div
 							className={css`
-								color: #fff;
+								color: #f4ce14;
 								font-size: 18px;
-								font-weight: 400;
+								font-weight: 600;
 							`}
 						>
-							{contactData.first_name} {contactData.last_name}
+							Name
 						</div>
-					)}
-				</div>
+						{(firstName || lastName) && (
+							<div
+								className={css`
+									color: #fff;
+									font-size: 18px;
+									font-weight: 400;
+								`}
+							>
+								{firstName} {lastName}
+							</div>
+						)}
+					</div>
+				)}
+				{/* data - editMode true */}
+				{editMode && (
+					<div
+						className={css`
+							display: flex;
+							flex-direction: column;
+							gap: 8px;
+							width: 100%;
+						`}
+					>
+						<div
+							className={css`
+								display: flex;
+								flex-direction: column;
+								gap: 2px;
+							`}
+						>
+							<div
+								className={css`
+									color: var(--White, #f5f7f8);
+								`}
+							>
+								First Name
+							</div>
+							<input
+								type="text"
+								placeholder="Insert first name"
+								onChange={(e) => setFirstName(e.target.value)}
+								value={firstName}
+								className={css`
+									border-radius: 10px;
+									border: 1px solid var(--Light-Grey, #9da1aa);
+									background: #fff;
+									padding: 6px 18px;
+									color: var(--Dark-Grey, #2d2d2d);
+									font-family: Poppins;
+									font-size: 14px;
+									font-weight: 400;
+									line-height: normal;
+									@media (min-width: 576px) {
+										font-size: 16px;
+									}
+								`}
+							/>
+						</div>
+						<div
+							className={css`
+								display: flex;
+								flex-direction: column;
+								gap: 2px;
+							`}
+						>
+							<div
+								className={css`
+									color: var(--White, #f5f7f8);
+								`}
+							>
+								Last Name
+							</div>
+							<input
+								type="text"
+								placeholder="Insert last name"
+								onChange={(e) => setLastName(e.target.value)}
+								className={css`
+									border-radius: 10px;
+									border: 1px solid var(--Light-Grey, #9da1aa);
+									background: #fff;
+									padding: 6px 18px;
+									color: var(--Dark-Grey, #2d2d2d);
+									font-family: Poppins;
+									font-size: 14px;
+									font-weight: 400;
+									line-height: normal;
+									@media (min-width: 576px) {
+										font-size: 16px;
+									}
+								`}
+								value={lastName}
+							/>
+						</div>
+						{errorMes && (
+							<div
+								className={css`
+									color: #d72626;
+								`}
+							>
+								{errorMes}
+							</div>
+						)}
+					</div>
+				)}
 				<div
 					className={css`
 						display: flex;
@@ -197,8 +432,8 @@ export default function ContactDetailModal({
 					>
 						Phones
 					</div>
-					{contactData &&
-						contactData.phones.map((i: any, idx: any) => (
+					{phoneNumbers &&
+						phoneNumbers.map((i: any, idx: any) => (
 							<div
 								key={idx}
 								className={css`
@@ -214,9 +449,7 @@ export default function ContactDetailModal({
 										font-weight: 400;
 									`}
 								>
-									{contactData.phones.length > 1
-										? `Number ${idx + 1}`
-										: "Number"}
+									{phoneNumbers.length > 1 ? `Number ${idx + 1}` : "Number"}
 								</div>
 								<div
 									className={css`
@@ -239,6 +472,7 @@ export default function ContactDetailModal({
 							</div>
 						))}
 				</div>
+				{/* contact created date */}
 				<div
 					className={css`
 						display: flex;
@@ -255,7 +489,7 @@ export default function ContactDetailModal({
 					>
 						People added at
 					</div>
-					{contactData && (
+					{createdAt && (
 						<div
 							className={css`
 								color: #fff;
@@ -263,42 +497,127 @@ export default function ContactDetailModal({
 								font-weight: 400;
 							`}
 						>
-							{dateFormatter(contactData.created_at)}
+							{dateFormatter(createdAt)}
 						</div>
 					)}
 				</div>
 			</div>
-			<div
-				className={css`
-					width: 100%;
-					display: flex;
-					gap: 16px;
-				`}
-			>
+			{/* buttons - editMode false */}
+			{!editMode && (
 				<div
 					className={css`
 						width: 100%;
 						display: flex;
-						justify-content: center;
-						align-items: center;
-						background-color: #d72626;
-						padding: 12px 24px;
-						color: #fff;
-						box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.25);
-						border-radius: 12px;
-						text-align: center;
-						font-size: 14px;
-						font-weight: 500;
-						@media (min-width: 576px) {
-							font-size: 16px;
-						}
-						cursor: pointer;
+						flex-direction: column-reverse;
+						gap: 8px;
 					`}
-					onClick={deleteBtnHandler}
 				>
-					Delete Contact
+					<div
+						className={css`
+							width: 100%;
+							display: flex;
+							justify-content: center;
+							align-items: center;
+							background-color: #d72626;
+							padding: 12px 24px;
+							color: #fff;
+							box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.25);
+							border-radius: 12px;
+							text-align: center;
+							font-size: 14px;
+							font-weight: 500;
+							@media (min-width: 576px) {
+								font-size: 16px;
+							}
+							cursor: pointer;
+						`}
+						onClick={deleteBtnHandler}
+					>
+						Delete Contact
+					</div>
+					<div
+						className={css`
+							width: 100%;
+							display: flex;
+							justify-content: center;
+							align-items: center;
+							background-color: #f4ce14;
+							padding: 12px 24px;
+							color: var(--Dark-Grey, #2d2d2d);
+							box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.25);
+							border-radius: 12px;
+							text-align: center;
+							font-size: 14px;
+							font-weight: 500;
+							@media (min-width: 576px) {
+								font-size: 16px;
+							}
+							cursor: pointer;
+						`}
+						onClick={editBtnHandler}
+					>
+						Edit Contact
+					</div>
 				</div>
-			</div>
+			)}
+			{/* buttons - editMode true */}
+			{editMode && (
+				<div
+					className={css`
+						width: 100%;
+						display: flex;
+						flex-direction: column-reverse;
+						gap: 8px;
+					`}
+				>
+					<div
+						className={css`
+							width: 100%;
+							display: flex;
+							justify-content: center;
+							align-items: center;
+							background-color: #d72626;
+							padding: 12px 24px;
+							color: #fff;
+							box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.25);
+							border-radius: 12px;
+							text-align: center;
+							font-size: 14px;
+							font-weight: 500;
+							@media (min-width: 576px) {
+								font-size: 16px;
+							}
+							cursor: pointer;
+						`}
+						onClick={cancelEditBtnHandler}
+					>
+						Cancel
+					</div>
+					<div
+						className={css`
+							width: 100%;
+							display: flex;
+							justify-content: center;
+							align-items: center;
+							background-color: #f4ce14;
+							padding: 12px 24px;
+							color: var(--Dark-Grey, #2d2d2d);
+							box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.25);
+							border-radius: 12px;
+							text-align: center;
+							font-size: 14px;
+							font-weight: 500;
+							@media (min-width: 576px) {
+								font-size: 16px;
+							}
+							cursor: pointer;
+						`}
+						onClick={saveEditBtnHandler}
+					>
+						Save
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }
